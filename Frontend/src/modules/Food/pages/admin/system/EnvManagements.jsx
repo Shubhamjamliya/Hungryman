@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   Save, RotateCw, FileText, LayoutGrid, Search, Eye, EyeOff, Undo2, X, Lock,
   CreditCard, KeyRound, MessageSquare, Flame, MapPin, Mail, Cloud, PhoneCall, PhoneIncoming,
-  Store, Activity, ShieldCheck, Server, AlertTriangle, Monitor, Copy,
+  Store, Activity, ShieldCheck, Server, AlertTriangle, Monitor, Copy, Smartphone, Check, Minus,
 } from "lucide-react";
 
 /* ─────────────────────────────── Sections ───────────────────────────────
@@ -635,6 +635,71 @@ function BackendEnvSetupSection() {
   );
 }
 
+/* Mobile apps: the only values baked into the APK. Everything else comes from this page via the backend. */
+const MOBILE_BUILD_VALUES = [
+  { key: "EXPO_PUBLIC_API_BASE_URL", what: "Backend API address", apps: [true, true, true] },
+  { key: "EXPO_PUBLIC_SOCKET_BASE_URL", what: "Live updates address", apps: [true, true, true] },
+  { key: "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY", what: "Map display (Android)", apps: [true, false, true] },
+  { key: "google-services.json", what: "Push notifications (file)", apps: [true, true, true] },
+];
+const MOBILE_APPS = ["User", "Restaurant", "Delivery"];
+
+function MobileAppsNote() {
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-rose-600 pb-3 dark:border-rose-400">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-600 text-white dark:bg-rose-500">
+            <Smartphone className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+              Mobile apps (build-time)
+              <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">mobile-*/.env</span>
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Only these are built into the APK. Everything else (payments, SMS, email, push, uploads) comes from this page automatically.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-rose-200 bg-white dark:border-rose-500/30 dark:bg-slate-800">
+        <table className="w-full text-sm">
+          <thead className="bg-rose-50/70 text-xs text-slate-600 dark:bg-rose-500/10 dark:text-slate-300">
+            <tr>
+              <th className="px-4 py-2 text-left font-medium">Value</th>
+              {MOBILE_APPS.map((a) => <th key={a} className="w-24 px-2 py-2 text-center font-medium">{a}</th>)}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-rose-50 dark:divide-slate-700/60">
+            {MOBILE_BUILD_VALUES.map((row) => (
+              <tr key={row.key}>
+                <td className="px-4 py-2">
+                  <div className="font-medium text-slate-700 dark:text-slate-200">{row.what}</div>
+                  <div className="text-xs text-slate-400">{row.key}</div>
+                </td>
+                {row.apps.map((needed, i) => (
+                  <td key={MOBILE_APPS[i]} className="px-2 py-2 text-center">
+                    {needed
+                      ? <Check className="mx-auto h-4 w-4 text-emerald-600" />
+                      : <Minus className="mx-auto h-4 w-4 text-slate-300" />}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <ul className="space-y-1 border-t border-rose-100 bg-rose-50/40 px-4 py-3 text-xs text-slate-600 dark:border-rose-500/20 dark:bg-slate-900/40 dark:text-slate-300">
+          <li>• Changing any of these needs a new APK build.</li>
+          <li>• The two addresses are optional in production: they default to https://jharkhandrasoi.com.</li>
+          <li>• Delivery app: set <code className="font-semibold">EXPO_PUBLIC_ANDROID_CERT_SHA1</code> to the release key's SHA-1 if the Maps key is restricted to Android apps.</li>
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 export default function EnvManagements() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -983,6 +1048,7 @@ export default function EnvManagements() {
           )}
           {!query && <FrontendEnvSection />}
           {!query && <BackendEnvSetupSection />}
+          {!query && <MobileAppsNote />}
           {visibleSections.map((s) => {
             const isServer = s.source === "server";
             const shownKeys = sectionKeys(s);
