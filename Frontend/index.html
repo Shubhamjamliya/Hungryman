@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <title>Jharkhand Rasoi</title>
+  
+  <!-- iOS PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/brandlogo.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Jharkhand Rasoi" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#ffffff" />
+  
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://maps.googleapis.com">
+  <link rel="preconnect" href="https://maps.gstatic.com" crossorigin>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://maps.googleapis.com https://maps.gstatic.com blob: https://checkout.razorpay.com https://cdn.razorpay.com https://www.gstatic.com https://firebase.googleapis.com https://*.firebaseio.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http: https://www.facebook.com; media-src 'self' https: http: data: blob:; connect-src 'self' http: https: ws: wss: https://maps.googleapis.com https://maps.gstatic.com https://api.razorpay.com https://cdn.razorpay.com https://www.gstatic.com https://firebase.googleapis.com https://*.firebaseio.com https://www.facebook.com; frame-src 'self' https://apis.google.com https://www.google.com https://maps.google.com https://api.razorpay.com https://checkout.razorpay.com https://*.firebaseapp.com; worker-src 'self' blob:;">
+
+  <!-- Meta Pixel Code -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '2090031751442584');
+    fbq('track', 'PageView');
+  </script>
+  <!-- End Meta Pixel Code -->
+
+</head>
+<body>
+  <noscript>
+    <img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=2090031751442584&ev=PageView&noscript=1"
+    />
+  </noscript>
+  <div id="root"></div>
+  <script type="module" src="/src/index.jsx"></script>
+</body>
+
+</html>

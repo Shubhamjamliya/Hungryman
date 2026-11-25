@@ -1,0 +1,205 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@500;600;700;800&family=Sora:wght@600;700&display=swap");
+
+:root {
+  --dv-primary: var(--primary, #F25A05);
+  --dv-primary-strong: #C93800;
+  --dv-primary-soft: #FFF4ED;
+  --dv-accent: #E84E00;
+  --dv-surface: #ffffff;
+  --dv-bg: #FAF5F0;
+  --dv-text: #0f1724;
+  --dv-muted: #4f5f77;
+  --dv-border: #d1dceb;
+}
+
+.delivery-v2-theme {
+  background:
+    radial-gradient(900px 420px at 92% -5%, #d5e3f7 0%, transparent 52%),
+    radial-gradient(760px 360px at -8% 0%, #e7edf8 0%, transparent 58%),
+    linear-gradient(180deg, #f7faff 0%, #edf2fb 100%);
+  min-height: 100vh;
+  color: var(--dv-text);
+  font-family: "Nunito Sans", "Outfit", "Poppins", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.delivery-v2-theme,
+.delivery-v2-theme * {
+  font-family: inherit;
+}
+
+.delivery-v2-theme .font-poppins,
+.delivery-v2-theme [class~="font-['Poppins']"],
+.delivery-v2-theme [class~="font-\[\'Poppins\'\]"] {
+  font-family: "Nunito Sans", "Outfit", sans-serif !important;
+}
+
+.delivery-v2-theme h1,
+.delivery-v2-theme h2,
+.delivery-v2-theme h3,
+.delivery-v2-theme h4,
+.delivery-v2-theme .font-black,
+.delivery-v2-theme .font-extrabold {
+  font-family: "Sora", "Nunito Sans", sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.delivery-v2-theme main {
+  max-width: min(1040px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding-bottom: 6.5rem;
+}
+
+.delivery-v2-theme [class~="rounded-2xl"],
+.delivery-v2-theme [class~="rounded-3xl"] {
+  box-shadow: 0 10px 28px -18px rgba(17, 39, 67, 0.24);
+  border-color: var(--dv-border);
+}
+
+.delivery-v2-theme [class~="bg-[#f6e9dc]"],
+.delivery-v2-theme [class~="bg-yellow-400"],
+.delivery-v2-theme [class~="bg-yellow-300"] {
+  background-color: var(--dv-bg) !important;
+}
+
+.delivery-v2-theme [class~="bg-[#121212]"] {
+  background-color: var(--dv-primary) !important;
+}
+
+.delivery-v2-theme [class~="text-primary"],
+.delivery-v2-theme [class~="text-[#EB590E]"] {
+  color: var(--dv-primary) !important;
+}
+
+.delivery-v2-theme [class~="bg-primary"] {
+  background-color: var(--dv-primary) !important;
+}
+
+.delivery-v2-theme [class~="bg-primary/10"],
+.delivery-v2-theme .bg-primary\/10 {
+  background-color: var(--dv-primary-soft) !important;
+}
+
+.delivery-v2-theme [class~="border-primary"] {
+  border-color: color-mix(in srgb, var(--dv-primary) 28%, #ffffff) !important;
+}
+
+.delivery-v2-theme .delivery-online-toggle.is-online {
+  background-color: #22c55e !important; /* Green 500 */
+  --tw-shadow-color: rgba(34, 197, 94, 0.32) !important;
+}
+
+.delivery-v2-theme .delivery-online-toggle.is-offline {
+  background-color: #ef4444 !important; /* Red 500 */
+  --tw-shadow-color: rgba(239, 68, 68, 0.32) !important;
+}
+
+.delivery-v2-theme button,
+.delivery-v2-theme [role="button"] {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.delivery-v2-theme input,
+.delivery-v2-theme textarea,
+.delivery-v2-theme select {
+  border-color: #e8dee7 !important;
+  background-color: #fff !important;
+  color: var(--dv-text) !important;
+}
+
+.delivery-v2-theme input:focus,
+.delivery-v2-theme textarea:focus,
+.delivery-v2-theme select:focus {
+  border-color: color-mix(in srgb, var(--dv-primary) 55%, #fff) !important;
+  box-shadow: 0 0 0 4px rgb(21 73 139 / 0.15) !important;
+}
+
+@media (max-width: 900px) {
+  .delivery-v2-theme main {
+    max-width: calc(100% - 1.25rem);
+    padding-bottom: 6rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .delivery-v2-theme main {
+    max-width: calc(100% - 1rem);
+    padding-bottom: 5.75rem;
+  }
+
+  .delivery-v2-theme [class~="px-6"] {
+    padding-left: 1.1rem !important;
+    padding-right: 1.1rem !important;
+  }
+
+  .delivery-v2-theme [class~="p-6"] {
+    padding: 1.1rem !important;
+  }
+}
+
+/* Scrollbar behavior: completely hidden on mobile screens & with .scrollbar-hide */
+.scrollbar-hide,
+.delivery-v2-theme .scrollbar-hide {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.scrollbar-hide::-webkit-scrollbar,
+.delivery-v2-theme .scrollbar-hide::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+@media (max-width: 1024px) {
+  .delivery-scroll-container,
+  .delivery-v2-theme,
+  .delivery-v2-theme [class*="overflow-y-auto"],
+  .delivery-v2-theme [class*="overflow-x-auto"],
+  .delivery-v2-theme * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .delivery-scroll-container::-webkit-scrollbar,
+  .delivery-v2-theme::-webkit-scrollbar,
+  .delivery-v2-theme [class*="overflow-y-auto"]::-webkit-scrollbar,
+  .delivery-v2-theme [class*="overflow-x-auto"]::-webkit-scrollbar,
+  .delivery-v2-theme *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .delivery-scroll-container:not(.scrollbar-hide),
+  .delivery-v2-theme [class*="overflow-y-auto"]:not(.scrollbar-hide) {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+  }
+
+  .delivery-scroll-container:not(.scrollbar-hide)::-webkit-scrollbar,
+  .delivery-v2-theme [class*="overflow-y-auto"]:not(.scrollbar-hide)::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  .delivery-scroll-container:not(.scrollbar-hide)::-webkit-scrollbar-thumb,
+  .delivery-v2-theme [class*="overflow-y-auto"]:not(.scrollbar-hide)::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+  }
+}
+
+/* Touch manipulation for instant mobile tap responsiveness without delay */
+.delivery-v2-theme button,
+.delivery-v2-theme a,
+.delivery-v2-theme [role="button"],
+.delivery-v2-theme input,
+.delivery-v2-theme article {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

@@ -1,0 +1,191 @@
+import { FoodZone } from '../../admin/models/zone.model.js';
+
+const toFinite = (v) => {
+    const n = typeof v === 'number' ? v : parseFloat(String(v));
+    return Number.isFinite(n) ? n : null;
+};
+
+const getPointLng = (pt) => {
+    if (!pt) return null;
+    if (Array.isArray(pt)) return toFinite(pt[0]);
+    return toFinite(pt.longitude ?? pt.lng);
+};
+const getPointLat = (pt) => {
+    if (!pt) return null;
+    if (Array.isArray(pt)) return toFinite(pt[1]);
+    return toFinite(pt.latitude ?? pt.lat);
+};
+
+// Ray-casting point-in-polygon for lat/lng polygons (supports both [lng, lat] and {latitude, longitude}).
+const isPointInPolygon = (lat, lng, polygon) => {
+    if (!Array.isArray(polygon) || polygon.length < 3) return false;
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = getPointLng(polygon[i]);
+        const yi = getPointLat(polygon[i]);
+        const xj = getPointLng(polygon[j]);
+        const yj = getPointLat(polygon[j]);
+        if (xi === null || yi === null || xj === null || yj === null) continue;
+        if (xi === 0 && yi === 0 && xj === 0 && yj === 0) continue;
+        const intersect =
+            yi > lat !== yj > lat &&
+            lng < ((xj - xi) * (lat - yi)) / (yj - yi + 0.0) + xi;
+        if (intersect) inside = !inside;
+    }
+    return inside;
+};
+
+const toRadians = (value) => (value * Math.PI) / 180;
+
+const getDistanceKm = (lat1, lng1, lat2, lng2) => {
+    const earthRadiusKm = 6371;
+    const deltaLat = toRadians(lat2 - lat1);
+    const deltaLng = toRadians(lng2 - lng1);
+    const a =
+        Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+        Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadiusKm * c;
+};
+
+const getZoneRadiusKm = (zone) => {
+    if (!zone?.isRadiusEnabled) return null;
+    const radius = toFinite(zone?.serviceRadius);
+    if (radius === null || radius < 0) return null;
+    return zone.unit === 'miles' ? radius * 1.60934 : radius;
+};
+
+const isPointWithinZoneRadius = (lat, lng, zone) => {
+    const centerLat = toFinite(zone?.centerPoint?.latitude ?? zone?.centerPoint?.lat);
+    const centerLng = toFinite(zone?.centerPoint?.longitude ?? zone?.centerPoint?.lng);
+    const radiusKm = getZoneRadiusKm(zone);
+    if (centerLat === null || centerLng === null || (centerLat === 0 && centerLng === 0) || radiusKm === null || radiusKm <= 0) return false;
+    return getDistanceKm(lat, lng, centerLat, centerLng) <= radiusKm;
+};
+
+const doesZoneServePoint = (lat, lng, zone) => {
+    if (zone?.isRadiusEnabled) {
+        const inRadius = isPointWithinZoneRadius(lat, lng, zone);
+        if (inRadius) return true;
+    }
+
+    const coords = Array.isArray(zone?.coordinates) ? zone.coordinates : [];
+    if (coords.length >= 3) {
+        return isPointInPolygon(lat, lng, coords);
+    }
+
+    return false;
+};
+
+/** GET /zones/detect?lat=..&lng=.. */
+export const detectZonePublicController = async (req, res, next) => {
+    try {
+        const lat = toFinite(req.query.lat);
+        const lng = toFinite(req.query.lng);
+        if (lat === null || lng === null) {
+            return res.status(400).json({ success: false, message: 'lat and lng are required' });
+        }
+
+        const zones = await FoodZone.find({ isActive: true }).lean();
+        const servingZones = [];
+        let radiusBlockedZone = null;
+
+        for (const zone of zones) {
+            const centerLat = toFinite(zone?.centerPoint?.latitude ?? zone?.centerPoint?.lat);
+            const centerLng = toFinite(zone?.centerPoint?.longitude ?? zone?.centerPoint?.lng);
+            const hasCenter = centerLat !== null && centerLng !== null && !(centerLat === 0 && centerLng === 0);
+            const distance = hasCenter ? getDistanceKm(lat, lng, centerLat, centerLng) : Infinity;
+            const radiusKm = getZoneRadiusKm(zone);
+
+            const inRadius = Boolean(zone?.isRadiusEnabled && hasCenter && radiusKm && distance <= radiusKm);
+            
+            const coords = Array.isArray(zone?.coordinates) ? zone.coordinates : [];
+            const inPolygon = coords.length >= 3 && isPointInPolygon(lat, lng, coords);
+
+            if (inRadius || inPolygon) {
+                servingZones.push({
+                    zone,
+                    inRadius,
+                    inPolygon,
+                    distance,
+                    radiusKm: radiusKm || 9999
+                });
+            } else if (!radiusBlockedZone && zone?.isRadiusEnabled && inPolygon && !inRadius) {
+                radiusBlockedZone = zone;
+            }
+        }
+
+        if (servingZones.length > 0) {
+            // Priority:
+            // 1. inRadius match takes priority over loose polygon match
+            // 2. Closer distance to zone centerPoint
+            // 3. Tighter radius / boundary
+            servingZones.sort((a, b) => {
+                if (a.inRadius && !b.inRadius) return -1;
+                if (!a.inRadius && b.inRadius) return 1;
+                if (a.distance !== b.distance) return a.distance - b.distance;
+                return a.radiusKm - b.radiusKm;
+            });
+
+            const best = servingZones[0].zone;
+            return res.status(200).json({
+                success: true,
+                message: 'Zone detected',
+                data: { status: 'IN_SERVICE', zoneId: best._id, zone: best }
+            });
+        }
+
+        if (radiusBlockedZone) {
+            return res.status(200).json({
+                success: true,
+                message: 'Outside service radius',
+                data: { status: 'OUT_OF_RADIUS', zoneId: null, zone: radiusBlockedZone }
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Out of service zone',
+            data: { status: 'OUT_OF_ZONE', zoneId: null, zone: null }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/** GET /zones/public - list active zones for onboarding/selects */
+export const listZonesPublicController = async (_req, res, next) => {
+    try {
+        const zones = await FoodZone.find({ isActive: true })
+            .select('name zoneName serviceLocation country unit isActive coordinates centerPoint serviceRadius isRadiusEnabled createdAt')
+            .sort({ createdAt: 1 })
+            .lean();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Zones fetched successfully',
+            data: { zones }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/** GET /zones/nearby - list zones for hotspot/nearby visualization */
+export const listZonesNearbyPublicController = async (req, res, next) => {
+    try {
+        const zones = await FoodZone.find({ isActive: true })
+            .select('name zoneName serviceLocation country unit isActive coordinates centerPoint serviceRadius isRadiusEnabled createdAt')
+            .sort({ createdAt: 1 })
+            .lean();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Nearby zones fetched',
+            data: { zones }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
