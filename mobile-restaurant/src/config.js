@@ -12,7 +12,6 @@ export const SOCKET_BASE_URL = strip(process.env.EXPO_PUBLIC_SOCKET_BASE_URL) ||
 
 export const GOOGLE_MAPS_API_KEY = String(process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "").trim();
 
-export const RAZORPAY_KEY_ID = String(process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "").trim();
 
 export const COMPANY_NAME_DEFAULT = "Jharkhand Rasoi";
 
