@@ -658,7 +658,7 @@ function MobileAppsNote() {
               <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">mobile-*/.env</span>
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Only these are built into the APK. Everything else (payments, SMS, email, push, uploads) comes from this page automatically.
+              Only these are required at build time in the APK. Everything else (payments, SMS, email, push, uploads) comes from this page automatically.
             </p>
           </div>
         </div>

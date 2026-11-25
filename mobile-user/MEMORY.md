@@ -12,7 +12,7 @@
 | Version | 1.0.0 | `Frontend/package.json` (no wrapper) |
 | API base | `https://jharkhandrasoi.com/api/v1` | user + `Frontend/.env` (`VITE_VPS_UPLOAD_API_BASE_URL`) |
 | Socket origin | `https://jharkhandrasoi.com` | derived like web `utils/socketOrigin.js` |
-| Maps key, Razorpay key id, Firebase web config | `mobile-user/.env` (copied from `Frontend/.env`) | |
+| Maps key | `mobile-user/.env` (`EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`; see `.env.example`) | Razorpay key comes from the backend per order; Firebase uses `google-services.json` |
 | Push | `mobile-user/google-services.json` (Firebase project `jharkhandrasoi12`) | |
 
 ## 3. Stack
