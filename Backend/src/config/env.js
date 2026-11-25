@@ -23,6 +23,18 @@ function readEnvFlag(name) {
 const resolveMongoUri = () => String(process.env.MONGODB_URI || '').trim();
 
 /**
+ * Phones that may log in with the default OTP: ONLY the numbers set in
+ * DEFAULT_TEST_PHONE / DEFAULT_TEST_PHONES (Admin > Environment & Keys). No built-in numbers.
+ */
+const resolveTestPhones = () => {
+    const raw = [
+        ...String(process.env.DEFAULT_TEST_PHONE || '').split(','),
+        ...String(process.env.DEFAULT_TEST_PHONES || '').split(','),
+    ];
+    return [...new Set(raw.map((p) => String(p).replace(/\D/g, '').slice(-10)).filter((p) => p.length === 10))];
+};
+
+/**
  * Which SMS gateway sends OTPs: 'smsindiahub' | 'smswala' | 'msg91' | 'none'.
  * SMS_PROVIDER (set in the admin panel) wins. Without it, the older on/off flags decide,
  * exactly as before: SMS India Hub, then MSG91, then SMSWala.
@@ -107,16 +119,8 @@ export const config = {
     otpRateWindow: Number(process.env.OTP_RATE_WINDOW || 600),
     useDefaultOtp: readEnvFlag('USE_DEFAULT_OTP') ?? (process.env.NODE_ENV === 'development'),
     useDefaultTestPhone: readEnvFlag('USE_DEFAULT_TEST_PHONE') ?? true,
-    defaultTestPhone: String(process.env.DEFAULT_TEST_PHONE || '9755633147').replace(/\D/g, '').slice(-10),
-    defaultTestPhones: (() => {
-        const rawPhones = [
-            '9755633147',
-            '8624862400',
-            ...(process.env.DEFAULT_TEST_PHONE ? String(process.env.DEFAULT_TEST_PHONE).split(',') : []),
-            ...(process.env.DEFAULT_TEST_PHONES ? String(process.env.DEFAULT_TEST_PHONES).split(',') : []),
-        ];
-        return [...new Set(rawPhones.map((p) => String(p).replace(/\D/g, '').slice(-10)).filter((p) => p.length === 10))];
-    })(),
+    defaultTestPhone: resolveTestPhones()[0] || '',
+    defaultTestPhones: resolveTestPhones(),
 
     // SMS India Hub
     smsIndiaHubUsername: process.env.SMS_INDIA_HUB_USERNAME || 'JHARKHANDRASOI',
@@ -250,7 +254,8 @@ export const updateConfig = () => {
     config.otpRateWindow = Number(process.env.OTP_RATE_WINDOW || config.otpRateWindow);
     config.useDefaultOtp = readEnvFlag('USE_DEFAULT_OTP') ?? (process.env.NODE_ENV === 'development');
     config.useDefaultTestPhone = readEnvFlag('USE_DEFAULT_TEST_PHONE') ?? true;
-    config.defaultTestPhone = String(process.env.DEFAULT_TEST_PHONE || '9755633147').replace(/\D/g, '').slice(-10);
+    config.defaultTestPhones = resolveTestPhones();
+    config.defaultTestPhone = config.defaultTestPhones[0] || '';
     config.smsIndiaHubUsername = process.env.SMS_INDIA_HUB_USERNAME || 'JHARKHANDRASOI';
     config.smsApiKey = process.env.SMS_INDIA_HUB_API_KEY || config.smsApiKey;
     config.smsSenderId = process.env.SMS_INDIA_HUB_SENDER_ID || config.smsSenderId || 'BGADPL';
