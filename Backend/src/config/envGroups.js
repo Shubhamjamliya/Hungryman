@@ -1,0 +1,53 @@
+/**
+ * Admin-panel keys, grouped by service. The groups are also how they are stored in MongoDB:
+ *   app_env_settings → { name: "app_env", settings: { razorpay: { RAZORPAY_TEST_KEY_ID: "<encrypted>", ... }, sms: {...}, ... } }
+ */
+export const ENV_GROUPS = {
+    razorpay: [
+        'RAZORPAY_MODE', 'RAZORPAY_TEST_KEY_ID', 'RAZORPAY_TEST_KEY_SECRET', 'RAZORPAY_LIVE_KEY_ID', 'RAZORPAY_LIVE_KEY_SECRET',
+        'RAZORPAY_WEBHOOK_SECRET', 'RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET',
+    ],
+    otp: [
+        'USE_DEFAULT_OTP', 'USE_DEFAULT_TEST_PHONE', 'DEFAULT_TEST_PHONE', 'DEFAULT_TEST_PHONES',
+        'OTP_EXPIRY_MINUTES', 'OTP_EXPIRY_SECONDS', 'OTP_EXPIRY', 'OTP_MAX_ATTEMPTS', 'OTP_RATE_LIMIT', 'OTP_RATE_WINDOW',
+    ],
+    sms: [
+        'SMS_PROVIDER',
+        'SMS_INDIA_HUB_USERNAME', 'SMS_INDIA_HUB_API_KEY', 'SMS_INDIA_HUB_SENDER_ID', 'SMS_INDIA_HUB_DLT_TEMPLATE_ID', 'SMS_INDIA_HUB_OTP_TEMPLATE',
+        'SMSWALA_API_URL', 'SMSWALA_API_KEY', 'SMSWALA_CAMPAIGN_ID', 'SMSWALA_ROUTE_ID', 'SMSWALA_SENDER_ID', 'SMSWALA_TEMPLATE_ID', 'SMSWALA_PE_ID',
+        'MSG91_AUTH_KEY', 'MSG91_SENDER_ID', 'MSG91_TEMPLATE_ID',
+    ],
+    firebase: [
+        'FIREBASE_SERVICE_ACCOUNT', 'FIREBASE_PROJECT_ID', 'VITE_FIREBASE_DATABASE_URL',
+        'VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_PROJECT_ID', 'VITE_FIREBASE_STORAGE_BUCKET',
+        'VITE_FIREBASE_MESSAGING_SENDER_ID', 'VITE_FIREBASE_APP_ID', 'VITE_FIREBASE_MEASUREMENT_ID', 'VITE_FIREBASE_VAPID_KEY',
+    ],
+    googleMaps: ['GOOGLE_MAPS_API_KEY'],
+    huggingface: ['HUGGINGFACE_API_KEY'],
+    email: ['EMAIL_HOST', 'EMAIL_PORT', 'EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'],
+    cloudinary: ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'],
+    voip: [
+        'APNS_TEAM_ID', 'APNS_KEY_ID', 'APNS_VOIP_P8_PATH', 'APNS_VOIP_PFX_PATH', 'APNS_VOIP_CERT_PASSWORD', 'APNS_PRODUCTION',
+        'APNS_VOIP_TOPIC', 'APNS_VOIP_TOPIC_RESTAURANT', 'APNS_VOIP_TOPIC_DELIVERY', 'APNS_TOPIC', 'APNS_TOPIC_RESTAURANT', 'APNS_TOPIC_DELIVERY',
+    ],
+    obd: [
+        'OBD_API_URL', 'OBD_UKEY', 'OBD_SERVICENO', 'OBD_VOICEFILE', 'OBD_IVRTEMPLATEID', 'OBD_SOURCETYPE',
+        'OBD_CAMPAIGNTYPE', 'OBD_FILETYPE', 'OBD_RETRYDURATION', 'OBD_DTMFLENGTH', 'OBD_WAITDURATION',
+    ],
+    petpooja: ['PETPOOJA_SYNC_ENABLED', 'PETPOOJA_APP_KEY', 'PETPOOJA_APP_SECRET'],
+    analytics: ['FB_PIXEL_ID'],
+    security: [
+        'RATE_LIMIT_ENABLED', 'RATE_LIMIT_WINDOW', 'RATE_LIMIT_WINDOW_MS', 'RATE_LIMIT_MAX',
+        'AUTH_RATE_LIMIT_WINDOW', 'AUTH_RATE_LIMIT_MAX', 'BCRYPT_SALT_ROUNDS',
+    ],
+};
+
+/** Every admin-managed key. */
+export const ALLOWED_ENV_KEYS = Object.values(ENV_GROUPS).flat();
+
+const GROUP_OF = Object.fromEntries(
+    Object.entries(ENV_GROUPS).flatMap(([group, keys]) => keys.map((key) => [key, group]))
+);
+
+/** Group a key is stored under, e.g. groupOfKey('EMAIL_PASS') === 'email'. */
+export const groupOfKey = (key) => GROUP_OF[key] || null;

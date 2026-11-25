@@ -6,6 +6,7 @@ import { initializeApp, getApp, getApps } from "firebase/app";
 import fallbackNotificationSound from "@food/assets/audio/alert.mp3";
 import pushNotificationSoundPath from "@food/assets/audio/zomato_sms.mp3";
 import restaurantOrderSound from "@food/assets/audio/restaurant-order-ring.wav";
+import { getPublicConfig, loadPublicConfig } from "@/services/publicConfig";
 
 const DEFAULT_FIREBASE_CONFIG = {
   apiKey: "",
@@ -453,16 +454,19 @@ export async function enablePushNotificationSound() {
     return true;
   }
 }
+// Firebase web config from the backend public config (Admin > Environment Managements)
 async function getFirebasePublicEnv() {
+  await loadPublicConfig();
+  const fb = getPublicConfig().firebase;
   return {
-    apiKey: sanitize(import.meta.env.VITE_FIREBASE_API_KEY),
-    authDomain: sanitize(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
-    projectId: sanitize(import.meta.env.VITE_FIREBASE_PROJECT_ID),
-    appId: sanitize(import.meta.env.VITE_FIREBASE_APP_ID),
-    messagingSenderId: sanitize(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
-    storageBucket: sanitize(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
-    measurementId: sanitize(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID),
-    vapidKey: sanitize(import.meta.env.VITE_FIREBASE_VAPID_KEY),
+    apiKey: sanitize(fb.apiKey),
+    authDomain: sanitize(fb.authDomain),
+    projectId: sanitize(fb.projectId),
+    appId: sanitize(fb.appId),
+    messagingSenderId: sanitize(fb.messagingSenderId),
+    storageBucket: sanitize(fb.storageBucket),
+    measurementId: sanitize(fb.measurementId),
+    vapidKey: sanitize(fb.vapidKey),
   };
 }
 

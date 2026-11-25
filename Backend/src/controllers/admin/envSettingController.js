@@ -1,40 +1,32 @@
-import EnvSetting from '../../models/EnvSetting.js';
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { readEnvSettings, writeEnvSettings } from '../../models/EnvSetting.js';
 import { encrypt, decrypt } from '../../utils/encryption.js';
 import { updateConfig } from '../../config/env.js';
 
-// Define which keys are allowed to be managed via DB
-export const ALLOWED_ENV_KEYS = [
-    'PORT', 'NODE_ENV', 'MONGODB_URI', 'JWT_ACCESS_SECRET', 'JWT_ACCESS_EXPIRES',
-    'JWT_REFRESH_SECRET', 'JWT_REFRESH_EXPIRES', 'FRONTEND_URL', 'REDIS_ENABLED',
-    'REDIS_URL', 'BULLMQ_ENABLED', 'RATE_LIMIT_WINDOW_MS', 'RATE_LIMIT_WINDOW',
-    'RATE_LIMIT_MAX', 'BCRYPT_SALT_ROUNDS', 'UPLOAD_PATH', 'HUGGINGFACE_API_KEY',
-    'EMAIL_HOST', 'EMAIL_PORT', 'EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM',
-    'GOOGLE_MAPS_API_KEY', 'ADMIN_REGISTRATION_CODE', 'ADMIN_NOTIFICATION_EMAILS',
-    'RAZORPAY_MODE', 'RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET',
-    'PASSWORD_RESET_OTP_EXPIRY_MINUTES', 'PASSWORD_RESET_MAX_ATTEMPTS',
-    'PASSWORD_RESET_TOKEN_EXPIRY_MINUTES', 'SOCKET_CORS_ORIGIN',
-    'VITE_FIREBASE_DATABASE_URL', 'FIREBASE_SERVICE_ACCOUNT',
-    'USE_DEFAULT_OTP', 'USE_DEFAULT_TEST_PHONE', 'DEFAULT_TEST_PHONE',
-    'SMS_HUB_ENABLED', 'SMS_INDIA_HUB_USERNAME', 'SMS_INDIA_HUB_API_KEY',
-    'SMS_INDIA_HUB_SENDER_ID', 'SMS_INDIA_HUB_DLT_TEMPLATE_ID', 'SMS_INDIA_HUB_OTP_TEMPLATE',
-    'MSG91_ENABLED', 'MSG91_AUTH_KEY', 'MSG91_SENDER_ID', 'MSG91_TEMPLATE_ID',
-    'SMSWALA_API_URL', 'SMSWALA_API_KEY',
-    'SMSWALA_CAMPAIGN_ID', 'SMSWALA_ROUTE_ID', 'SMSWALA_SENDER_ID',
-    'SMSWALA_TEMPLATE_ID', 'SMSWALA_PE_ID',
-    'OTP_EXPIRY_MINUTES', 'OTP_EXPIRY_SECONDS', 'OTP_MAX_ATTEMPTS',
-    'OTP_RATE_LIMIT', 'OTP_RATE_WINDOW', 'OTP_EXPIRY'
+// Keys that must stay in the server's .env file: they are needed before the DB is
+// connected, or are read only once while the app is being built. Never taken from the DB.
+export const BOOTSTRAP_ENV_KEYS = [
+    'PORT', 'SOCKET_PORT', 'HOST', 'NODE_ENV', 'TZ', 'ENCRYPTION_KEY',
+    'MONGODB_URI',
+    'JWT_SECRET', 'JWT_ACCESS_SECRET', 'JWT_ACCESS_EXPIRES', 'JWT_REFRESH_SECRET', 'JWT_REFRESH_EXPIRES',
+    'REDIS_ENABLED', 'REDIS_URL', 'BULLMQ_ENABLED',
+    'FRONTEND_URL', 'SOCKET_CORS_ORIGIN', 'UPLOAD_PATH', 'UPLOAD_DIR'
 ];
+
+// Keys managed from the admin panel, grouped by service (see config/envGroups.js)
+export { ALLOWED_ENV_KEYS } from '../../config/envGroups.js';
+import { ALLOWED_ENV_KEYS } from '../../config/envGroups.js';
 
 export const getAllEnvSettings = async (req, res) => {
     try {
-        const settings = await EnvSetting.find({});
+        const stored = await readEnvSettings();
         const settingsMap = {};
-        
-        settings.forEach(setting => {
-            if (setting.value !== undefined && setting.value !== null) {
-                settingsMap[setting.key] = setting.isEncrypted ? decrypt(setting.value) : setting.value;
-            }
-        });
+        for (const [key, encrypted] of Object.entries(stored)) {
+            const value = decrypt(encrypted);
+            if (value !== null) settingsMap[key] = value;
+        }
 
         // Merge with process.env for keys that don't exist in DB yet
         const result = {};
@@ -59,23 +51,33 @@ export const updateEnvSettings = async (req, res) => {
     try {
         const updates = req.body;
         
+        const mode = updates.RAZORPAY_MODE;
+        if (mode && !['test', 'live'].includes(String(mode).trim().toLowerCase())) {
+            return res.status(400).json({ success: false, message: 'RAZORPAY_MODE must be test or live' });
+        }
+
+        const provider = updates.SMS_PROVIDER;
+        if (provider && !['smsindiahub', 'smswala', 'msg91'].includes(String(provider).trim().toLowerCase())) {
+            return res.status(400).json({ success: false, message: 'SMS_PROVIDER must be smsindiahub, smswala or msg91' });
+        }
+
+        const toSet = {};
+        const toUnset = [];
         for (const [key, value] of Object.entries(updates)) {
-            if (ALLOWED_ENV_KEYS.includes(key)) {
-                if (value === null || value === undefined || value === '') {
-                    // If empty, remove from DB to fallback to .env file
-                    await EnvSetting.deleteOne({ key });
-                } else {
-                    const encryptedValue = encrypt(String(value));
-                    await EnvSetting.findOneAndUpdate(
-                        { key },
-                        { value: encryptedValue, isEncrypted: true },
-                        { upsert: true, new: true }
-                    );
-                    // Update in-memory process.env so it reflects immediately
-                    process.env[key] = String(value);
-                }
+            if (!ALLOWED_ENV_KEYS.includes(key)) continue;
+            if (value === null || value === undefined || value === '') {
+                toUnset.push(key); // empty = remove the key
+            } else {
+                toSet[key] = encrypt(String(value));
             }
         }
+
+        // One atomic update of the single settings document
+        await writeEnvSettings(toSet, toUnset);
+
+        // Reflect immediately in this process (other processes: Reload servers)
+        for (const key of Object.keys(toSet)) process.env[key] = String(updates[key]);
+        for (const key of toUnset) delete process.env[key];
         
         // Update the app config object
         updateConfig();
@@ -84,4 +86,55 @@ export const updateEnvSettings = async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
+};
+
+// Backend root (where ecosystem.config.cjs lives)
+const BACKEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const ECOSYSTEM_FILE = path.join(BACKEND_ROOT, 'ecosystem.config.cjs');
+let reloadInProgress = false;
+
+/**
+ * Reload every PM2 process of this project (API cluster, socket, scheduler, workers)
+ * so they all re-read the env settings from the DB on startup.
+ * Only the apps in ecosystem.config.cjs are reloaded, not other apps on the server.
+ */
+export const reloadServers = async (req, res) => {
+    // pm_id is set by PM2 for every process it manages
+    if (process.env.pm_id === undefined) {
+        return res.status(400).json({
+            success: false,
+            message: 'Server is not running under PM2. Restart it manually to apply changes.'
+        });
+    }
+    if (reloadInProgress) {
+        return res.status(409).json({ success: false, message: 'A reload is already in progress' });
+    }
+
+    reloadInProgress = true;
+    res.status(202).json({
+        success: true,
+        message: 'Reloading all servers. This takes a few seconds.'
+    });
+
+    // Run after the response is sent, detached, so it survives this process being reloaded
+    setTimeout(() => {
+        try {
+            const child = spawn('pm2', ['reload', ECOSYSTEM_FILE], {
+                cwd: BACKEND_ROOT,
+                detached: true,
+                stdio: 'ignore',
+                shell: true
+            });
+            child.on('error', (err) => {
+                console.error('PM2 reload failed:', err.message);
+                reloadInProgress = false;
+            });
+            child.unref();
+        } catch (error) {
+            console.error('PM2 reload failed:', error.message);
+            reloadInProgress = false;
+        }
+        // Safety reset in case this process is not among the reloaded ones
+        setTimeout(() => { reloadInProgress = false; }, 60000).unref();
+    }, 500);
 };

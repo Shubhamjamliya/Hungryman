@@ -1,19 +1,24 @@
-import EnvSetting from '../models/EnvSetting.js';
+import { readEnvSettings } from '../models/EnvSetting.js';
 import { decrypt } from '../utils/encryption.js';
 import { updateConfig } from './env.js';
+import { ALLOWED_ENV_KEYS } from '../controllers/admin/envSettingController.js';
 
 export const loadEnvFromDb = async () => {
     try {
-        const settings = await EnvSetting.find({});
+        const settings = await readEnvSettings();
         let count = 0;
-        
-        settings.forEach(setting => {
-            if (setting.value !== undefined && setting.value !== null) {
-                const decryptedValue = setting.isEncrypted ? decrypt(setting.value) : setting.value;
-                process.env[setting.key] = decryptedValue;
-                count++;
+
+        for (const [key, stored] of Object.entries(settings)) {
+            // Only admin-managed keys; startup keys (Mongo, JWT, ...) always come from .env
+            if (!ALLOWED_ENV_KEYS.includes(key) || stored == null) continue;
+            const value = decrypt(stored);
+            if (value === null) {
+                console.error(`Skipping ${key}: cannot decrypt (check ENCRYPTION_KEY)`);
+                continue;
             }
-        });
+            process.env[key] = value;
+            count++;
+        }
         
         if (count > 0) {
             updateConfig();

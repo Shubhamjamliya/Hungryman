@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, MapPin, X, AlertTriangle, Loader2, CheckCircle2, UserCheck, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
+import { getGoogleMapsApiKeySync } from '@/modules/Food/utils/googleMapsApiKey';
 
 // Cached BlazeFace model instance across modal toggles
 let cachedBlazeFaceModel = null;
@@ -317,7 +318,7 @@ export function PhotoUploadModal({ isOpen, onClose, onUpload }) {
           return response.results[0].formatted_address;
         }
       } else {
-        const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+        const apiKey = getGoogleMapsApiKeySync();
         if (apiKey) {
           const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`);
           const data = await res.json();

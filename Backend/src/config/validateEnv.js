@@ -9,7 +9,7 @@ export const validateConfig = () => {
     const missing = [];
 
     if (!config.mongodbUri) {
-        missing.push('MONGO_URI or MONGODB_URI');
+        missing.push('MONGODB_URI');
     }
     if (!config.jwtAccessSecret) {
         missing.push('JWT_ACCESS_SECRET or JWT_SECRET');

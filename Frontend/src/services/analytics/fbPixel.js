@@ -1,9 +1,10 @@
 /**
  * Meta (Facebook) Pixel Analytics Service
- * Pixel / Dataset ID: 2090031751442584
+ * Pixel ID comes from the backend public config (FB_PIXEL_ID in Admin > Environment Managements).
  */
+import { getPublicConfig } from '@/services/publicConfig';
 
-export const FB_PIXEL_ID = import.meta.env.VITE_FB_PIXEL_ID || '2090031751442584';
+export const getFbPixelId = () => String(getPublicConfig().fbPixelId || '').trim();
 
 /**
  * Safe invocation of window.fbq
@@ -26,10 +27,12 @@ export const fbq = (...args) => {
 };
 
 /**
- * Initialize Pixel programmatically if not loaded via index.html
+ * Initialize the Pixel. Called once in index.jsx after the public config has loaded.
+ * Does nothing when no Pixel ID is configured.
  */
-export const initPixel = (pixelId = FB_PIXEL_ID) => {
+export const initPixel = (pixelId = getFbPixelId()) => {
   if (typeof window === 'undefined') return;
+  if (!pixelId) return;
   if (window.fbq) return;
 
   /* eslint-disable */
@@ -176,7 +179,7 @@ if (typeof window !== 'undefined') {
 }
 
 export default {
-  FB_PIXEL_ID,
+  getFbPixelId,
   fbq,
   initPixel,
   trackPageView,

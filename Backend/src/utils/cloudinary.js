@@ -18,13 +18,10 @@ let providerCache = { value: 'cloudinary', expiresAt: 0 };
 export const isLocalhostEnvironment = () => {
     const nodeEnv = (process.env.NODE_ENV || '').toLowerCase().trim();
     if (nodeEnv === 'production') return false;
-    const mongoEnv = (process.env.MONGO_ENV || '').toLowerCase().trim();
-    if (mongoEnv === 'production' || mongoEnv === 'prod') return false;
     const frontendUrl = (process.env.FRONTEND_URL || '').toLowerCase();
     const host = (process.env.HOST || '').toLowerCase();
     return (
         nodeEnv === 'development' ||
-        mongoEnv === 'local' ||
         frontendUrl.includes('localhost') ||
         frontendUrl.includes('127.0.0.1') ||
         host === 'localhost' ||

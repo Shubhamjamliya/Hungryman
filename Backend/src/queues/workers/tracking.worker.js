@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { Worker } from 'bullmq';
 import { config } from '../../config/env.js';
+import { connectDB } from '../../config/db.js';
+import { loadEnvFromDb } from '../../config/envLoader.js';
 import { logger } from '../../utils/logger.js';
 import { getBullMQConnection } from '../connection.js';
 import { TRACKING_QUEUE } from '../queue.constants.js';
@@ -36,6 +38,12 @@ const startTrackingWorker = () => {
     logger.info('Tracking worker started (Scalable Real-time Persistence)');
     return worker;
 };
+
+// Load admin-panel credentials (SMS, Firebase, Cloudinary...) from DB before taking jobs
+if (config.bullmqEnabled) {
+    await connectDB();
+    await loadEnvFromDb();
+}
 
 const worker = startTrackingWorker();
 if (worker) {

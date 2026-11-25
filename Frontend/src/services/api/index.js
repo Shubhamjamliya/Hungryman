@@ -279,6 +279,10 @@ export const adminAPI = {
   updateUploadSettings: (data) => adminClient.put("/food/admin/upload-settings", data),
   getEnvSettings: () => adminClient.get("/food/admin/env"),
   updateEnvSettings: (data) => adminClient.put("/food/admin/env", data),
+  // reveal=true also returns secret values (SUPER_ADMIN, .env format view only)
+  getServerEnv: (reveal = false) => adminClient.get("/food/admin/env/server", { params: reveal ? { reveal: 1 } : {} }),
+  updateServerEnv: (data) => adminClient.put("/food/admin/env/server", data),
+  reloadServers: () => adminClient.post("/food/admin/env/reload"),
   getBusinessSettings: () => adminClient.get("/food/admin/business-settings"),
   updateBusinessSettings: (data) => {
     // If data is a FormData object (e.g. has files), pass it directly, else pass as JSON

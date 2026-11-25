@@ -19,33 +19,44 @@ function readEnvFlag(name) {
     return undefined;
 }
 
-const resolveMongoUri = () => {
-    const mongoEnv = (process.env.MONGO_ENV || '').toLowerCase().trim();
-    const nodeEnv = (process.env.NODE_ENV || '').toLowerCase().trim();
+// One database connection string: MONGODB_URI
+const resolveMongoUri = () => String(process.env.MONGODB_URI || '').trim();
 
-    // When on domain / production, use production MongoDB
-    if (mongoEnv === 'production' || mongoEnv === 'prod' || nodeEnv === 'production') {
-        return process.env.MONGO_URI_PRODUCTION || process.env.MONGODB_URI;
-    }
-    // When on localhost (development / local), use local MongoDB
-    if (mongoEnv === 'local' || mongoEnv === 'dev' || nodeEnv === 'development') {
-        return process.env.MONGO_URI_LOCAL || 'mongodb://127.0.0.1:27017/tuggo';
-    }
-    return process.env.MONGO_URI || process.env.MONGODB_URI || process.env.MONGO_URI_LOCAL || 'mongodb://127.0.0.1:27017/tuggo';
+/**
+ * Which SMS gateway sends OTPs: 'smsindiahub' | 'smswala' | 'msg91' | 'none'.
+ * SMS_PROVIDER (set in the admin panel) wins. Without it, the older on/off flags decide,
+ * exactly as before: SMS India Hub, then MSG91, then SMSWala.
+ */
+export const SMS_PROVIDERS = ['smsindiahub', 'smswala', 'msg91'];
+export const resolveSmsProvider = () => {
+    const chosen = String(process.env.SMS_PROVIDER || '').trim().toLowerCase();
+    if (SMS_PROVIDERS.includes(chosen)) return chosen;
+
+    const hubFlag = readEnvFlag('SMS_HUB_ENABLED');
+    const hubEnabled = hubFlag !== undefined
+        ? hubFlag
+        : readEnvFlag('MSG91_ENABLED') !== true && Boolean(
+            String(process.env.SMS_INDIA_HUB_API_KEY || '').trim() &&
+            String(process.env.SMS_INDIA_HUB_SENDER_ID || '').trim()
+        );
+    if (hubEnabled) return 'smsindiahub';
+    if (readEnvFlag('MSG91_ENABLED') === true) return 'msg91';
+    if (readEnvFlag('SMSWALA_ENABLED') === true) return 'smswala';
+    return 'none';
 };
 
 export const resolveRazorpayKeys = () => {
-    const mongoEnv = (process.env.MONGO_ENV || '').toLowerCase().trim();
     const nodeEnv = (process.env.NODE_ENV || '').toLowerCase().trim();
     const razorpayMode = (process.env.RAZORPAY_MODE || '').toLowerCase().trim();
     const testModeFlag = readEnvFlag('RAZORPAY_TEST_MODE');
     const explicitKeyId = (process.env.RAZORPAY_KEY_ID || '').trim();
 
-    const liveKeyId = process.env.RAZORPAY_LIVE_KEY_ID || 'rzp_live_Tu71kQFx3AofXH';
-    const liveKeySecret = process.env.RAZORPAY_LIVE_KEY_SECRET || 'ixU3NeYyW5A6sXdzeC3GY090';
+    // No hardcoded fallbacks: keys come only from the admin panel (DB) or .env
+    const liveKeyId = (process.env.RAZORPAY_LIVE_KEY_ID || '').trim();
+    const liveKeySecret = (process.env.RAZORPAY_LIVE_KEY_SECRET || '').trim();
 
-    const testKeyId = process.env.RAZORPAY_TEST_KEY_ID || 'rzp_test_SbjooFQK8nvU6V';
-    const testKeySecret = process.env.RAZORPAY_TEST_KEY_SECRET || 'Av7Mz5DBxwD5C6sUGw66qAGE';
+    const testKeyId = (process.env.RAZORPAY_TEST_KEY_ID || '').trim();
+    const testKeySecret = (process.env.RAZORPAY_TEST_KEY_SECRET || '').trim();
 
     // Only switch to LIVE mode if explicitly configured via RAZORPAY_MODE=live
     const isLive = razorpayMode === 'live' && testModeFlag !== true;
@@ -79,7 +90,6 @@ export const config = {
     nodeEnv: process.env.NODE_ENV || 'development',
 
     // Database
-    mongoEnv: (process.env.MONGO_ENV || 'local').toLowerCase().trim(),
     mongodbUri: resolveMongoUri(),
 
     // JWT
@@ -115,18 +125,11 @@ export const config = {
     smsDltTemplateId: process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID || '1077104580057767222',
     smsIndiaHubOtpTemplate: process.env.SMS_INDIA_HUB_OTP_TEMPLATE,
 
-    // Service Toggles
-    smsHubEnabled: (() => {
-        const flag = readEnvFlag('SMS_HUB_ENABLED');
-        if (flag !== undefined) return flag;
-        if (readEnvFlag('MSG91_ENABLED') === true) return false;
-        return Boolean(
-            String(process.env.SMS_INDIA_HUB_API_KEY || '').trim() &&
-            String(process.env.SMS_INDIA_HUB_SENDER_ID || '').trim()
-        );
-    })(),
-    msg91Enabled: readEnvFlag('MSG91_ENABLED') === true,
-    smsWalaEnabled: readEnvFlag('SMSWALA_ENABLED') === true,
+    // SMS gateway (exactly one is active)
+    smsProvider: resolveSmsProvider(),
+    smsHubEnabled: resolveSmsProvider() === 'smsindiahub',
+    msg91Enabled: resolveSmsProvider() === 'msg91',
+    smsWalaEnabled: resolveSmsProvider() === 'smswala',
 
     // MSG91
     msg91AuthKey: process.env.MSG91_AUTH_KEY,
@@ -211,7 +214,7 @@ export const config = {
     petpoojaAppSecret: process.env.PETPOOJA_APP_SECRET,
 
     // Google Maps
-    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyDzBYks_EAI7-2tjQZgHShSqSS5FVESYt4',
+    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY || '',
 
     // OBD Call Alert Configuration
     obd: {
@@ -234,7 +237,6 @@ export const updateConfig = () => {
     config.socketPort = process.env.SOCKET_PORT || config.socketPort;
     config.host = process.env.HOST || config.host;
     config.nodeEnv = process.env.NODE_ENV || config.nodeEnv;
-    config.mongoEnv = (process.env.MONGO_ENV || config.mongoEnv || 'local').toLowerCase().trim();
     config.mongodbUri = resolveMongoUri();
     config.jwtAccessSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || config.jwtAccessSecret;
     config.jwtRefreshSecret = process.env.JWT_REFRESH_SECRET || config.jwtRefreshSecret;
@@ -254,12 +256,10 @@ export const updateConfig = () => {
     config.smsSenderId = process.env.SMS_INDIA_HUB_SENDER_ID || config.smsSenderId || 'BGADPL';
     config.smsDltTemplateId = process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID || config.smsDltTemplateId || '1077104580057767222';
     config.smsIndiaHubOtpTemplate = process.env.SMS_INDIA_HUB_OTP_TEMPLATE || config.smsIndiaHubOtpTemplate;
-    config.smsHubEnabled = Boolean(
-        process.env.SMS_HUB_ENABLED === 'true' ||
-        (process.env.SMS_INDIA_HUB_API_KEY && process.env.SMS_INDIA_HUB_SENDER_ID)
-    );
-    config.msg91Enabled = readEnvFlag('MSG91_ENABLED') === true;
-    config.smsWalaEnabled = readEnvFlag('SMSWALA_ENABLED') === true;
+    config.smsProvider = resolveSmsProvider();
+    config.smsHubEnabled = config.smsProvider === 'smsindiahub';
+    config.msg91Enabled = config.smsProvider === 'msg91';
+    config.smsWalaEnabled = config.smsProvider === 'smswala';
     config.msg91AuthKey = process.env.MSG91_AUTH_KEY || config.msg91AuthKey;
     config.msg91SenderId = process.env.MSG91_SENDER_ID || config.msg91SenderId;
     config.msg91TemplateId = process.env.MSG91_TEMPLATE_ID || config.msg91TemplateId;

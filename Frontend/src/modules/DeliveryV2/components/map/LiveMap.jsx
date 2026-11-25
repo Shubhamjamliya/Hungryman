@@ -11,6 +11,7 @@ import {
 import { useDeliveryStore } from '@/modules/DeliveryV2/store/useDeliveryStore';
 import { calculateHeading } from '@/modules/DeliveryV2/utils/geo';
 import { zoneAPI } from '@food/api';
+import { getGoogleMapsApiKeySync } from '@/modules/Food/utils/googleMapsApiKey';
 
 const mapContainerStyle = {
   width: '100%',
@@ -40,10 +41,6 @@ const mapOptions = {
   ]
 };
 const LIBRARIES = ['places', 'geometry'];
-const DEFAULT_FALLBACK_MAPS_KEY = 'AIzaSyDzBYks_EAI7-2tjQZgHShSqSS5FVESYt4';
-const DELIVERY_GOOGLE_MAPS_API_KEY = String(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || DEFAULT_FALLBACK_MAPS_KEY)
-  .trim()
-  .replace(/^['"]|['"]$/g, '');
 
 const LiveMapWithApiKey = ({ googleMapsApiKey, onMapClick, onMapLoad, onPathReceived, onPolylineReceived, zoom = 12 }) => {
   const { riderLocation, activeOrder, tripStatus } = useDeliveryStore();
@@ -511,12 +508,13 @@ const LiveMapWithApiKey = ({ googleMapsApiKey, onMapClick, onMapLoad, onPathRece
 };
 
 export const LiveMap = (props) => {
+  const DELIVERY_GOOGLE_MAPS_API_KEY = getGoogleMapsApiKeySync();
   if (!DELIVERY_GOOGLE_MAPS_API_KEY) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-gray-50 px-8 text-center">
         <div>
           <p className="font-black text-gray-900">Map is not configured</p>
-          <p className="mt-2 text-sm font-medium text-gray-500">Set VITE_GOOGLE_MAPS_API_KEY in the frontend environment.</p>
+          <p className="mt-2 text-sm font-medium text-gray-500">Set GOOGLE_MAPS_API_KEY in Admin &gt; Environment Managements.</p>
         </div>
       </div>
     );

@@ -15,13 +15,14 @@ import AnimatedPage from "@food/components/user/AnimatedPage"
 import useAppBackNavigation from "@food/hooks/useAppBackNavigation"
 import { clearStoredUserLocation, notifyLocationUpdated, persistDeliveryAddressMode, persistUserLocation, readStoredUserLocation } from "@food/utils/locationPersistence"
 import { checkAddressDeliverability } from "@food/utils/restaurantAvailability"
+import { getGoogleMapsApiKeySync } from "@/modules/Food/utils/googleMapsApiKey"
 
 const debugLog = (...args) => { }
 const debugWarn = (...args) => { }
 const debugError = (...args) => { }
 
 // Enable Maps if API Key is available, otherwise fallback to coordinates-only mode
-const MAPS_ENABLED = !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+const isMapsEnabled = () => Boolean(getGoogleMapsApiKeySync())
 
 // Calculate distance between two coordinates using Haversine formula
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -154,7 +155,7 @@ export default function AddressSelectorPage() {
 
   // Load Google Maps API key
   useEffect(() => {
-    if (!MAPS_ENABLED) return
+    if (!isMapsEnabled()) return
     import('@food/utils/googleMapsApiKey.js').then(({ getGoogleMapsApiKey }) => {
       getGoogleMapsApiKey().then(key => {
         setGOOGLE_MAPS_API_KEY(key)
@@ -204,7 +205,7 @@ export default function AddressSelectorPage() {
 
   // Map Initialization logic
   useEffect(() => {
-    if (!MAPS_ENABLED || !showAddressForm || !mapContainerRef.current || !GOOGLE_MAPS_API_KEY) return
+    if (!isMapsEnabled() || !showAddressForm || !mapContainerRef.current || !GOOGLE_MAPS_API_KEY) return
 
     let isMounted = true
     setMapLoading(true)

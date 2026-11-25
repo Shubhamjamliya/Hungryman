@@ -23,6 +23,7 @@ import appConfigRoutes from '../core/appConfig/appConfig.routes.js';
 import promocodeRoutes from './promocodeRoutes.js';
 import { requireZone } from '../middlewares/zone.middleware.js';
 import envSettingRoutes from './admin/envSettingRoutes.js';
+import { getPublicConfig } from '../core/publicConfig/publicConfig.controller.js';
 import { subscriptionUserRouter, subscriptionAdminRouter } from '../modules/food/subscription/routes/subscription.routes.js';
 
 const router = express.Router();
@@ -33,6 +34,9 @@ router.use(requireZone);
 router.get('/v1/health', (req, res) => {
     res.status(200).json({ status: 'UP', message: 'Server is healthy' });
 });
+
+// Public frontend config (Maps / Firebase web keys from admin panel), no login
+router.get('/v1/public-config', getPublicConfig);
 
 // App Config Route
 router.use('/v1/app-config', appConfigRoutes);

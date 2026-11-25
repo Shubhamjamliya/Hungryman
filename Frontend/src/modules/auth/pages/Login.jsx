@@ -15,16 +15,17 @@ import { Button } from "@food/components/ui/button"
 import { Input } from "@food/components/ui/input"
 import { Label } from "@food/components/ui/label"
 import { useCompanyName } from "@food/hooks/useCompanyName"
+import { getPublicConfig } from "@/services/publicConfig"
 
 export default function UnifiedOTPFastLogin() {
   const RESEND_COOLDOWN_SECONDS = 59
   const OTP_LENGTH = 6
   const companyName = useCompanyName() || "Jharkhand Rasoi"
 
+  // Test phone prefill comes from the backend public config (USE_DEFAULT_TEST_PHONE in admin panel)
   const defaultTestPhone =
-    import.meta.env.VITE_USE_DEFAULT_TEST_PHONE === "true"
-      ? String(import.meta.env.VITE_DEFAULT_TEST_PHONE || "").replace(/\D/g, "").slice(0, 10)
-      : (typeof window !== "undefined" ? sessionStorage.getItem("draft_phone_login") || "" : "")
+    getPublicConfig().defaultTestPhone ||
+    (typeof window !== "undefined" ? sessionStorage.getItem("draft_phone_login") || "" : "")
 
   const [phoneNumber, setPhoneNumber] = useState(defaultTestPhone)
   const [otp, setOtp] = useState("")

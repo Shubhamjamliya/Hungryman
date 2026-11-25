@@ -1,9 +1,10 @@
 /**
- * Google Maps API Key — build-time env + runtime public API (admin DB / backend .env).
+ * Google Maps API Key, from the backend public config (Admin > Environment Managements).
  * Works in Vite web dev, production web, and mobile WebView shells.
  */
 
 import { useEffect, useState } from "react";
+import { getPublicConfig, loadPublicConfig } from "@/services/publicConfig";
 let cachedApiKey = null;
 
 function sanitizeApiKey(value) {
@@ -11,33 +12,25 @@ function sanitizeApiKey(value) {
   return String(value).trim().replace(/^['"]|['"]$/g, "");
 }
 
-const DEFAULT_FALLBACK_MAPS_KEY = "AIzaSyDzBYks_EAI7-2tjQZgHShSqSS5FVESYt4";
-
-function getBuildTimeKey() {
-  const envKey = sanitizeApiKey(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
-  return envKey || DEFAULT_FALLBACK_MAPS_KEY;
+function getConfigKey() {
+  return sanitizeApiKey(getPublicConfig().googleMapsApiKey);
 }
 
-/**
- * Resolve Google Maps API key (cached).
- * Directly uses build-time Vite env (import.meta.env.VITE_GOOGLE_MAPS_API_KEY).
- */
+/** Resolve Google Maps API key (waits for the public config if it is still loading). */
 export async function getGoogleMapsApiKey() {
   if (cachedApiKey) return cachedApiKey;
-
-  const buildKey = getBuildTimeKey();
-  cachedApiKey = buildKey || "";
-  return cachedApiKey;
+  await loadPublicConfig();
+  cachedApiKey = getConfigKey() || null;
+  return cachedApiKey || "";
 }
 
-/** Sync peek — only returns build-time key; prefer async getGoogleMapsApiKey(). */
+/** Sync peek: the key from the already-loaded public config. */
 export function getGoogleMapsApiKeySync() {
-  return cachedApiKey || getBuildTimeKey();
+  return cachedApiKey || getConfigKey();
 }
 
 export function clearGoogleMapsApiKeyCache() {
   cachedApiKey = null;
-  fetchPromise = null;
 }
 
 /** Whether maps can be enabled (build-time or after async fetch). */

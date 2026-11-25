@@ -84,10 +84,6 @@ function bootstrapNativeHashRoute() {
 
 bootstrapNativeHashRoute()
 
-// Preload Google Maps API key for web + mobile WebView (runtime from backend if .env empty)
-import('./modules/Food/utils/googleMapsApiKey.js')
-  .then(({ getGoogleMapsApiKey }) => getGoogleMapsApiKey())
-  .catch(() => { /* non-critical */ })
 
 // ─── Suppress known non-critical errors ──────────────────────────────────────
 
@@ -189,12 +185,19 @@ window.addEventListener('vite:preloadError', (event) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { AppProviders } from './app/providers.jsx'
+import { loadPublicConfig } from './services/publicConfig.js'
+import { initPixel } from './services/analytics/fbPixel.js'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element not found')
 
-createRoot(rootElement).render(
-  <AppProviders>
-    <App />
-  </AppProviders>
-)
+// Load public keys (Maps, Firebase) from the backend before rendering.
+// Instant when a cached copy exists; never blocks for more than a few seconds.
+loadPublicConfig().finally(() => {
+  initPixel() // Meta Pixel, only if FB_PIXEL_ID is set in the admin panel
+  createRoot(rootElement).render(
+    <AppProviders>
+      <App />
+    </AppProviders>
+  )
+})

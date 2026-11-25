@@ -5,7 +5,6 @@ import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 import { getGoogleMapsApiKeySync } from '@/modules/Food/utils/googleMapsApiKey';
 
 const LIBRARIES = ['places', 'geometry'];
-const FALLBACK_KEY = 'AIzaSyDzBYks_EAI7-2tjQZgHShSqSS5FVESYt4';
 
 const mapContainerStyle = {
   width: '100%',
@@ -41,7 +40,7 @@ export default function InAppMapModal({
   order,
   onOpenLiveRoute,
 }) {
-  const apiKey = useMemo(() => getGoogleMapsApiKeySync() || FALLBACK_KEY, []);
+  const apiKey = useMemo(() => getGoogleMapsApiKeySync(), []);
 
   const { isLoaded } = useJsApiLoader({
     id: 'delivery-live-map',

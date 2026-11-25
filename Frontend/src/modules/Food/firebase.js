@@ -1,16 +1,12 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
+import { getPublicConfig } from '@/services/publicConfig';
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || ""
+// Firebase web config comes from the backend public config (Admin > Environment Managements)
+const getFirebaseConfig = () => {
+  const { vapidKey, ...config } = getPublicConfig().firebase;
+  return config;
 };
 
 // Internal state
@@ -23,8 +19,8 @@ let firebaseRealtimeDb = null;
  * Checks whether Firebase credentials are validly provided in environment variables.
  */
 export function isFirebaseConfigured() {
-  const apiKey = String(firebaseConfig.apiKey || '').trim();
-  const projectId = String(firebaseConfig.projectId || '').trim();
+  const apiKey = String(getFirebaseConfig().apiKey || '').trim();
+  const projectId = String(getFirebaseConfig().projectId || '').trim();
   return Boolean(apiKey && apiKey.length > 5 && projectId);
 }
 
@@ -39,7 +35,7 @@ function initializeBaseApp() {
     if (existingApps.length > 0) {
       app = existingApps[0];
     } else {
-      app = initializeApp(firebaseConfig);
+      app = initializeApp(getFirebaseConfig());
     }
     return app;
   } catch (err) {
@@ -100,8 +96,8 @@ export function ensureFirebaseInitialized(options = {}) {
 
   if (enableRealtimeDb && !firebaseRealtimeDb) {
     try {
-      firebaseRealtimeDb = firebaseConfig.databaseURL
-        ? getDatabase(firebaseApp, firebaseConfig.databaseURL)
+      firebaseRealtimeDb = getFirebaseConfig().databaseURL
+        ? getDatabase(firebaseApp, getFirebaseConfig().databaseURL)
         : getDatabase(firebaseApp);
     } catch (err) {
       console.warn('[Firebase] Realtime Database initialization skipped:', err?.message || err);
